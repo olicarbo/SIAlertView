@@ -17,7 +17,7 @@ NSString *const SIAlertViewDidDismissNotification = @"SIAlertViewDidDismissNotif
 #define DEBUG_LAYOUT 0
 
 #define MESSAGE_MIN_LINE_COUNT 3
-#define MESSAGE_MAX_LINE_COUNT 15
+#define MESSAGE_MAX_LINE_COUNT 5
 #define GAP 10
 #define CANCEL_BUTTON_PADDING_TOP 5
 #define CONTENT_PADDING_LEFT 10
@@ -679,15 +679,6 @@ static SIAlertView *__si_alert_current_view;
     self.containerView.layer.shadowPath = [UIBezierPath bezierPathWithRoundedRect:self.containerView.bounds cornerRadius:self.containerView.layer.cornerRadius].CGPath;
     
     CGFloat y = CONTENT_PADDING_TOP;
-    if (self.contentView) {
-        if (y > CONTENT_PADDING_TOP) {
-            y += GAP;
-        }
-        CGFloat height = self.contentView.bounds.size.height;
-        self.contentView.frame = CGRectMake(CONTENT_PADDING_LEFT, y, self.containerView.bounds.size.width - CONTENT_PADDING_LEFT * 2, height);
-        y += height;
-    }
-    
 	if (self.titleLabel) {
         if (y > CONTENT_PADDING_TOP) {
             y += GAP;
@@ -704,6 +695,14 @@ static SIAlertView *__si_alert_current_view;
         self.messageLabel.text = self.message;
         CGFloat height = [self heightForMessageLabel];
         self.messageLabel.frame = CGRectMake(CONTENT_PADDING_LEFT, y, self.containerView.bounds.size.width - CONTENT_PADDING_LEFT * 2, height);
+        y += height;
+    }
+    if (self.contentView) {
+        if (y > CONTENT_PADDING_TOP) {
+            y += GAP;
+        }
+        CGFloat height = self.contentView.bounds.size.height;
+        self.contentView.frame = CGRectMake(CONTENT_PADDING_LEFT, y, self.containerView.bounds.size.width - CONTENT_PADDING_LEFT * 2, height);
         y += height;
     }
     if (self.items.count > 0) {
