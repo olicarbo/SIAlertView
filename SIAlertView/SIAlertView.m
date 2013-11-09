@@ -445,6 +445,11 @@ static SIAlertView *__si_alert_current_view;
         
         [SIAlertView setAnimating:NO];
         
+        if (self.textField)
+        {
+            [self.textField becomeFirstResponder];
+        }
+        
         NSInteger index = [[SIAlertView sharedQueue] indexOfObject:self];
         if (index < [SIAlertView sharedQueue].count - 1) {
             [self dismissAnimated:YES cleanup:NO]; // dismiss to show next alert view
@@ -512,6 +517,14 @@ static SIAlertView *__si_alert_current_view;
             }
         }
     };
+    
+    if (self.textField && self.textField.isFirstResponder)
+    {
+        [[NSNotificationCenter defaultCenter] removeObserver:self name:UIKeyboardWillShowNotification object:NULL];
+        [[NSNotificationCenter defaultCenter] removeObserver:self name:UIKeyboardWillHideNotification object:NULL];
+        
+        [self.textField resignFirstResponder];
+    }
     
     if (animated && isVisible) {
         [SIAlertView setAnimating:YES];
@@ -986,8 +999,18 @@ static SIAlertView *__si_alert_current_view;
     if(!self.textField) {
         self.textField = [[UITextField alloc] initWithFrame:self.bounds];
        self.textField.delegate = self;
-        self.textField.borderStyle = UITextBorderStyleBezel;
+        self.textField.borderStyle = UITextBorderStyleRoundedRect;
+        self.textField.returnKeyType = UIReturnKeyDone;
+        self.textField.clearButtonMode = UITextFieldViewModeWhileEditing;
+        
+        if (self.textFieldPlaceholder)
+            self.textField.placeholder = self.textFieldPlaceholder;
+        
         [self.containerView addSubview:self.textField];
+        
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillShow:) name:UIKeyboardWillShowNotification object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillHide:) name:UIKeyboardWillHideNotification object:nil];
+        
 #if DEBUG_LAYOUT
         self.textField.backgroundColor = [UIColor redColor];
 #endif
@@ -1074,7 +1097,56 @@ static SIAlertView *__si_alert_current_view;
 
 - (BOOL)textFieldShouldReturn:(UITextField *)textField {
     [textField resignFirstResponder];
+    
+    bool buttonAction = false;
+    if ([self.items count] == 1)
+    {
+        [self buttonAction:self.buttons[0]];
+        buttonAction = true;
+    }
+    
+    if (!buttonAction)
+    {
+        for (NSUInteger i = 0; i < self.buttons.count; i++)
+        {
+            if (((SIAlertItem *)self.items[i]).type == SIAlertViewButtonTypeDefault)
+            {
+                [self buttonAction:self.buttons[i]];
+                buttonAction = true;
+            }
+        }
+    }
+    
     return YES;
+}
+
+#pragma mark - Keyboard actions
+
+- (void)keyboardWillShow:(NSNotification*) notification
+{
+    NSDictionary* info = [notification userInfo];
+    CGSize kbSize = [[info objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue].size;
+    
+    CGFloat height = [self preferredHeight];
+    CGFloat top = (self.bounds.size.height - kbSize.height - height) * 0.5;
+    
+    [UIView animateWithDuration:0.25f animations:^{
+        CGRect frame = self.containerView.frame;
+        frame.origin.y = top;
+        self.containerView.frame = frame;
+    }];
+}
+
+- (void)keyboardWillHide:(NSNotification*) notification
+{
+    CGFloat height = [self preferredHeight];
+    CGFloat top = (self.bounds.size.height - height) * 0.5;
+    
+    [UIView animateWithDuration:0.25f animations:^{
+        CGRect frame = self.containerView.frame;
+        frame.origin.y = top;
+        self.containerView.frame = frame;
+    }];
 }
 
 #pragma mark - UIAppearance setters
