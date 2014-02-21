@@ -1125,7 +1125,10 @@ static SIAlertView *__si_alert_current_view;
 - (void)keyboardWillShow:(NSNotification*) notification
 {
     NSDictionary* info = [notification userInfo];
-    CGSize kbSize = [[info objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue].size;
+    
+    CGRect kbFrame = [[info objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue];
+    kbFrame = [[self.containerView superview] convertRect:kbFrame fromView:nil];
+    CGSize kbSize = kbFrame.size;
     
     CGFloat height = [self preferredHeight];
     CGFloat top = (self.bounds.size.height - kbSize.height - height) * 0.5;
